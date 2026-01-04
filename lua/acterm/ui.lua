@@ -213,13 +213,18 @@ function M.update()
   local current_index = state.get_current_index()
   local terminals = state.get_terminals()
 
-  if current_index > 0 and terminals[current_index] then
-    local term_buf = terminals[current_index].buf
-    vim.api.nvim_win_set_buf(main_win, term_buf)
+  -- Check if main_win is still valid before trying to set its buffer
+  if main_win and vim.api.nvim_win_is_valid(main_win) then
+    if current_index > 0 and terminals[current_index] then
+      local term_buf = terminals[current_index].buf
+      vim.api.nvim_win_set_buf(main_win, term_buf)
+    end
   end
 
   local sidebar_win = state.get_windows()
-  render_sidebar(sidebar_win)
+  if sidebar_win and vim.api.nvim_win_is_valid(sidebar_win) then
+    render_sidebar(sidebar_win)
+  end
 end
 
 function M.refresh_sidebar()
@@ -227,7 +232,9 @@ function M.refresh_sidebar()
     return
   end
   local sidebar_win = state.get_windows()
-  render_sidebar(sidebar_win)
+  if sidebar_win and vim.api.nvim_win_is_valid(sidebar_win) then
+    render_sidebar(sidebar_win)
+  end
 end
 
 function M.focus_sidebar()

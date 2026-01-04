@@ -26,6 +26,15 @@ function M.remove_terminal(index)
   end
 end
 
+function M.find_terminal_by_buf(buf)
+  for i, term in ipairs(state.terminals) do
+    if term.buf == buf then
+      return i
+    end
+  end
+  return nil
+end
+
 function M.get_current_index()
   return state.current_index
 end

@@ -14,8 +14,26 @@ function M.create_terminal(cwd)
     job_id = vim.fn.termopen(vim.o.shell, {
       cwd = cwd,
       on_exit = function(_, exit_code, _)
-        if exit_code ~= 0 then
-          return
+        -- Find and remove the terminal from state
+        local index = state.find_terminal_by_buf(buf)
+        local was_current = (index == state.get_current_index())
+
+        if index then
+          state.remove_terminal(index)
+        end
+
+        -- If no terminals left, close the UI
+        if state.get_terminal_count() == 0 and state.is_ui_open() then
+          local ok, ui = pcall(require, "acterm.ui")
+          if ok then
+            ui.close()
+          end
+        else
+          -- Update the UI to show the next available terminal
+          local ok, ui = pcall(require, "acterm.ui")
+          if ok and ui.update then
+            ui.update()
+          end
         end
       end,
     })
@@ -132,8 +150,26 @@ function M.create_custom_terminal(command, cwd)
     job_id = vim.fn.termopen(command, {
       cwd = cwd,
       on_exit = function(_, exit_code, _)
-        if exit_code ~= 0 then
-          return
+        -- Find and remove the terminal from state
+        local index = state.find_terminal_by_buf(buf)
+        local was_current = (index == state.get_current_index())
+
+        if index then
+          state.remove_terminal(index)
+        end
+
+        -- If no terminals left, close the UI
+        if state.get_terminal_count() == 0 and state.is_ui_open() then
+          local ok, ui = pcall(require, "acterm.ui")
+          if ok then
+            ui.close()
+          end
+        else
+          -- Update the UI to show the next available terminal
+          local ok, ui = pcall(require, "acterm.ui")
+          if ok and ui.update then
+            ui.update()
+          end
         end
       end,
     })
