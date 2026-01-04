@@ -1,0 +1,4 @@
+*acterm.txt*  acterm.nvim help
+
+This file is generated from README.md using panvimdoc.
+

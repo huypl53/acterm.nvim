@@ -2,7 +2,7 @@
 
 A focused, floating terminal workspace for Neovim: a live sidebar plus a main terminal pane.
 
-![Demo](https://via.placeholder.com/800x400?text=Demo+image+coming+soon)
+![](https://via.placeholder.com/800x400?text=Demo+image+coming+soon)
 
 ## Why acterm.nvim
 
