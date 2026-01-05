@@ -1,4 +1,4 @@
-*acterm.nvim.txt*         For NVIM v0.8.0         Last change: 2026 January 04
+*acterm.nvim.txt*         For NVIM v0.8.0         Last change: 2026 January 05
 
 ==============================================================================
 Table of Contents                              *acterm.nvim-table-of-contents*
@@ -115,6 +115,7 @@ DEFAULT CONFIGURATION ~
         enabled = true,       -- Track terminal activity for status
         poll_ms = 200,        -- Sidebar refresh interval while open
         idle_ms = 1000,       -- Idle threshold for status (ms)
+        debounce_ms = 100,    -- Wait for output to pause before refreshing (reduces overhead)
       },
       status_icons = {        -- Status indicators for terminals
         running = '',        -- Icon for running terminals
@@ -127,6 +128,8 @@ DEFAULT CONFIGURATION ~
         prev = '<leader>tk',      -- Previous terminal
         focus_sidebar = '<leader>ts', -- Focus sidebar
       },
+      exit_key = 'q',            -- Key to close UI (works in both sidebar and main window)
+      custom_commands = {},      -- Named terminal commands with keybindings
     })
 <
 
@@ -164,6 +167,92 @@ creating a seamless look with the sidebar. For best results, set `gap = 0`.
       gap = 0,
       seamless_borders = true,
       border = 'rounded',
+    }
+<
+
+
+EXIT KEY ~
+
+The `exit_key` option controls which key closes the UI. This works in both the
+sidebar and main window (in normal mode). In terminal mode, the key passes
+through to the shell normally.
+
+>lua
+    {
+      exit_key = 'q',     -- Default: press 'q' in normal mode to close
+      -- exit_key = '<esc>',  -- Alternative: use Escape key
+    }
+<
+
+**Note:** In the main terminal window, you must switch to normal mode (press
+`Ctrl-\ Ctrl-n`) before the exit key will work. In terminal mode, keys pass
+through to the shell.
+
+
+CUSTOM COMMANDS ~
+
+Define custom terminal commands with their own keybindings. This is useful for
+frequently used tools like `lazygit`, `gitui`, Python REPL, etc.
+
+>lua
+    {
+      custom_commands = {
+        lazygit = {
+          cmd = 'lazygit',
+          key = '<leader>gg',
+        },
+        python = {
+          cmd = 'python',
+          key = '<leader>tp',
+        },
+        lua = {
+          cmd = 'lua',
+          key = '<leader>tl',
+        },
+        htop = {
+          cmd = 'htop',
+          key = '<leader>th',
+        },
+      },
+    }
+<
+
+Each custom command: - Opens a new terminal with the specified command - Has
+its own dedicated keybinding - Appears in the sidebar with the command name as
+the title - Can coexist with your regular shell terminals
+
+
+PERFORMANCE & DEBOUNCING ~
+
+The plugin uses **debouncing** to efficiently handle high-output terminals
+(build processes, logs, etc.):
+
+>lua
+    {
+      activity = {
+        enabled = true,
+        debounce_ms = 100,  -- Wait 100ms after output stops before refreshing
+      },
+    }
+<
+
+**How debouncing works:** - When a terminal produces continuous output, the
+sidebar waits until output pauses - Reduces CPU usage from ~1000 renders/sec to
+~10 renders/sec during heavy output - Event-based design (no polling) - only
+checks when terminal content actually changes
+
+**Adjust for your needs:** - `50ms` - More responsive, slightly more overhead -
+`100ms` - Balanced (default) - `200-500ms` - Less overhead, less responsive
+updates
+
+**To disable activity tracking entirely** (uses `jobwait` instead, no
+`on_lines` callback):
+
+>lua
+    {
+      activity = {
+        enabled = false,
+      },
     }
 <
 
@@ -265,6 +354,9 @@ You can also use the plugin programmatically:
     
     -- Rename current terminal
     acterm.rename_terminal('my-terminal')
+    
+    -- Open custom command (defined in setup)
+    acterm.open_custom_command('lazygit')  -- Opens terminal with lazygit command
 <
 
 
@@ -298,11 +390,25 @@ CUSTOM COMMANDS ~
 >lua
     require('acterm').setup({
       custom_commands = {
-        rg = { cmd = "rg --files", key = "<leader>tr" },
-        gitui = { cmd = "gitui", key = "<leader>tg" },
+        -- Git tools
+        lazygit = { cmd = "lazygit", key = "<leader>gg" },
+        gitui = { cmd = "gitui", key = "<leader>gu" },
+    
+        -- Development tools
+        python = { cmd = "python", key = "<leader>tp" },
+        node = { cmd = "node", key = "<leader>tn" },
+        lua = { cmd = "lua", key = "<leader>tl" },
+    
+        -- System tools
+        htop = { cmd = "htop", key = "<leader>th" },
+        bpytop = { cmd = "bpytop", key = "<leader>tb" },
       },
     })
 <
+
+**Note:** Custom command terminals appear in the sidebar with the command name
+as the title. When you exit a custom command terminal, it’s removed from the
+sidebar. If it’s the last terminal, the UI closes automatically.
 
 
 ACTIVITY-BASED STATUS ~
@@ -313,6 +419,7 @@ ACTIVITY-BASED STATUS ~
         enabled = true,
         poll_ms = 200,
         idle_ms = 1000,
+        debounce_ms = 100,  -- Wait for output to pause before refreshing sidebar
       },
       status_icons = {
         running = "",
@@ -320,6 +427,9 @@ ACTIVITY-BASED STATUS ~
       },
     })
 <
+
+**Performance tip:** Increase `debounce_ms` (e.g., to 200-500ms) for
+high-output terminals like build processes or logs.
 
 
 SCREENSHOTS                              *acterm.nvim-acterm.nvim-screenshots*
@@ -402,6 +512,11 @@ between them easily.
 
 The terminal status is automatically detected using Neovim’s job control,
 showing whether a terminal has an active process or is idle.
+
+**Terminal exit behavior:** - When you exit a terminal (e.g., type `exit` in
+the shell), it’s automatically removed from the sidebar - If it’s the last
+terminal, the UI closes automatically - If there are other terminals, the main
+window switches to display the next available terminal
 
 
 CONTRIBUTING                            *acterm.nvim-acterm.nvim-contributing*
