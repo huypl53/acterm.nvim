@@ -1,13 +1,23 @@
 local M = {}
 
 local state = {}
+local debounce_timers = {}
 
 local function now_ms()
   return vim.uv.now()
 end
 
-function M.start(buf, on_change)
+-- Clear debounce timer for a buffer
+local function clear_timer(buf)
+  if debounce_timers[buf] then
+    debounce_timers[buf]:close()
+    debounce_timers[buf] = nil
+  end
+end
+
+function M.start(buf, on_change, debounce_ms)
   buf = buf or vim.api.nvim_get_current_buf()
+  debounce_ms = debounce_ms or 100  -- Default 100ms debounce
 
   if not vim.api.nvim_buf_is_valid(buf) then
     return
@@ -19,25 +29,33 @@ function M.start(buf, on_change)
 
   local st = {
     last_change_ms = now_ms(),
-    pending = false,
     on_change = on_change,
+    debounce_ms = debounce_ms,
   }
   state[buf] = st
 
   local attached = vim.api.nvim_buf_attach(buf, false, {
     on_lines = function()
       st.last_change_ms = now_ms()
-      if st.on_change and not st.pending then
-        st.pending = true
+      -- Clear existing timer and schedule new one (debounce)
+      clear_timer(buf)
+
+      local timer = vim.loop.new_timer()
+      debounce_timers[buf] = timer
+      timer:start(debounce_ms, 0, function()
         vim.schedule(function()
-          st.pending = false
-          if state[buf] and st.on_change then
+          -- Only call if this timer is still the current one (not superseded)
+          if debounce_timers[buf] == timer and state[buf] and st.on_change then
             st.on_change(buf)
           end
+          if debounce_timers[buf] == timer then
+            debounce_timers[buf] = nil
+          end
         end)
-      end
+      end)
     end,
     on_detach = function()
+      clear_timer(buf)
       state[buf] = nil
     end,
   })
@@ -50,6 +68,7 @@ function M.start(buf, on_change)
     buffer = buf,
     once = true,
     callback = function()
+      clear_timer(buf)
       state[buf] = nil
     end,
   })

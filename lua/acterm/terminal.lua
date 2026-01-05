@@ -48,7 +48,7 @@ function M.create_terminal(cwd)
           ui.refresh_sidebar()
         end
       end
-    end)
+    end, cfg.activity.debounce_ms)
   end
 
   return {
@@ -184,7 +184,7 @@ function M.create_custom_terminal(command, cwd)
           ui.refresh_sidebar()
         end
       end
-    end)
+    end, cfg.activity.debounce_ms)
   end
 
   return {

@@ -19,6 +19,7 @@ local defaults = {
     enabled = true,
     poll_ms = 200,
     idle_ms = 1000,
+    debounce_ms = 100,  -- Wait for output to pause before refreshing sidebar
   },
   status_icons = {
     running = "",
@@ -54,6 +55,9 @@ function M.setup(user_config)
   end
   if user_config.keys then
     config.keys = vim.tbl_extend("force", defaults.keys, user_config.keys)
+  end
+  if user_config.activity then
+    config.activity = vim.tbl_extend("force", defaults.activity, user_config.activity)
   end
 end
 
