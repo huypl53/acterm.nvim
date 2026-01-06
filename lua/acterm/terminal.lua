@@ -8,6 +8,7 @@ function M.create_terminal(cwd)
   local cfg = config.get()
 
   local buf = vim.api.nvim_create_buf(false, true)
+  vim.bo[buf].termwinscroll = cfg.scrollback
 
   local job_id
   vim.api.nvim_buf_call(buf, function()
@@ -144,6 +145,7 @@ function M.create_custom_terminal(command, cwd)
   local cfg = config.get()
 
   local buf = vim.api.nvim_create_buf(false, true)
+  vim.bo[buf].termwinscroll = cfg.scrollback
   local job_id
 
   vim.api.nvim_buf_call(buf, function()

@@ -21,6 +21,7 @@ local defaults = {
     idle_ms = 1000,
     debounce_ms = 100,  -- Wait for output to pause before refreshing sidebar
   },
+  scrollback = 1000,  -- Maximum lines of terminal history to keep (reduces RAM usage)
   status_icons = {
     running = "",
     idle = "",
