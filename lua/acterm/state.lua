@@ -5,9 +5,12 @@ local state = {
   current_index = 0,
   sidebar_win = nil,
   main_win = nil,
+  container_win = nil,
   sidebar_buf = nil,
   main_buf = nil,
   is_open = false,
+  sidebar_visible = true,
+  resize_group = nil,
 }
 
 function M.add_terminal(terminal)
@@ -93,6 +96,8 @@ function M.reset()
   state.sidebar_buf = nil
   state.main_buf = nil
   state.is_open = false
+  state.sidebar_visible = true
+  state.resize_group = nil
 end
 
 function M.set_terminal_name(index, name)
@@ -119,6 +124,22 @@ function M.get_terminal_status(index)
     return state.terminals[index].status
   end
   return "idle"
+end
+
+function M.is_sidebar_visible()
+  return state.sidebar_visible
+end
+
+function M.set_sidebar_visible(visible)
+  state.sidebar_visible = visible
+end
+
+function M.get_resize_group()
+  return state.resize_group
+end
+
+function M.set_resize_group(group)
+  state.resize_group = group
 end
 
 return M

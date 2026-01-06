@@ -44,6 +44,12 @@ function M._setup_keybinds()
     end, opts)
   end
 
+  if cfg.keys.toggle_sidebar then
+    vim.keymap.set("n", cfg.keys.toggle_sidebar, function()
+      M.toggle_sidebar()
+    end, opts)
+  end
+
   -- Setup keybindings for custom commands
   for name, cmd_config in pairs(cfg.custom_commands) do
     if cmd_config.key then
@@ -93,6 +99,10 @@ end
 
 function M.focus_sidebar()
   ui.focus_sidebar()
+end
+
+function M.toggle_sidebar()
+  ui.toggle_sidebar()
 end
 
 function M.rename_terminal(name)

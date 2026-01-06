@@ -22,6 +22,9 @@ A focused, floating terminal workspace for Neovim: a live sidebar plus a main te
 - **Two-pane floating UI**: Sidebar terminal list + main terminal view
 - **Multiple terminals**: Create and manage multiple terminal sessions
 - **Easy navigation**: Cycle through terminals with keyboard shortcuts
+- **Dynamic resizing**: Automatically adjusts when Neovim window is resized
+- **Toggle sidebar**: Hide/show sidebar for more terminal space
+- **Silent cycling**: Cycle terminals without losing focus
 - **Customizable layout**: Configure sidebar width, main pane size, gap, and position
 - **Relative sizing**: Specify sizes as percentages (0-1.0) or absolute values
 - **Seamless borders**: Shared border between sidebar and main pane for a clean look
@@ -94,6 +97,7 @@ require('acterm').setup({
     next = '<leader>tj',      -- Next terminal
     prev = '<leader>tk',      -- Previous terminal
     focus_sidebar = '<leader>ts', -- Focus sidebar
+    toggle_sidebar = '<leader>tp', -- Toggle sidebar visibility
   },
   exit_key = 'q',            -- Key to close UI (works in both sidebar and main window)
   custom_commands = {},      -- Named terminal commands with keybindings
@@ -230,6 +234,7 @@ The plugin uses **debouncing** to efficiently handle high-output terminals (buil
 | `:AcTermPrev` | Switch to previous terminal |
 | `:AcTermGoto N` | Go to terminal N (by index) |
 | `:AcTermFocusSidebar` | Focus the sidebar |
+| `:AcTermToggleSidebar` | Toggle sidebar visibility |
 | `:AcTermRename <name>` | Rename current terminal |
 
 ### Default Keybindings
@@ -241,6 +246,7 @@ The plugin uses **debouncing** to efficiently handle high-output terminals (buil
 | `<leader>tj` | Next terminal |
 | `<leader>tk` | Previous terminal |
 | `<leader>ts` | Focus sidebar |
+| `<leader>tp` | Toggle sidebar visibility |
 
 ### Sidebar Controls
 
@@ -265,6 +271,36 @@ When the sidebar is focused:
 - **Build/test loops**: Run commands and watch activity at a glance.
 - **Git helpers**: Bind `gitui`, `lazygit`, or custom commands.
 - **Scratch pads**: Quick one-off terminals without leaving the editor.
+
+### Advanced Features
+
+#### Dynamic Window Resizing
+
+The UI automatically responds to window resize events. When you resize Neovim (e.g., split window, zoom in/out), the terminal UI will reposition itself to remain centered.
+
+This works with both absolute and relative sizing. When using relative sizes (e.g., `width = 0.6`), the UI will scale proportionally to the editor window.
+
+#### Toggle Sidebar Visibility
+
+Hide the sidebar to give more space to the main terminal:
+
+```lua
+-- Keybinding: <leader>tp
+-- Command: :AcTermToggleSidebar
+```
+
+When hidden:
+- The main terminal expands to fill the entire UI width
+- Terminal list is hidden but cycling still works with `<leader>tj` / `<leader>tk`
+- Press `<leader>tp` again to show the sidebar
+
+This is useful when you need a larger terminal view but still want to keep the UI open for quick cycling.
+
+#### Silent Terminal Cycling
+
+When you cycle terminals using `<leader>tj` (next) or `<leader>tk` (previous), the focus stays on the main terminal window. The sidebar updates visually to show the current selection (highlight and cursor move), but your typing focus remains uninterrupted.
+
+This means you can quickly switch between terminals without losing your place or having to manually refocus the terminal.
 
 ### Sidebar Keybindings
 
@@ -299,6 +335,9 @@ acterm.toggle()
 acterm.open()
 acterm.close()
 
+-- Toggle sidebar visibility
+acterm.toggle_sidebar()
+
 -- Focus sidebar
 acterm.focus_sidebar()
 
@@ -330,14 +369,31 @@ require('acterm').setup({
     next = '<leader>tj',
     prev = '<leader>tk',
     focus_sidebar = '<leader>ts',
+    toggle_sidebar = '<leader>tp',
   },
 })
 
 -- Press <leader>tt to toggle the UI
 -- Press <leader>tn to create a new terminal
 -- Press <leader>ts to focus the sidebar
+-- Press <leader>tp to toggle sidebar visibility for more space
 -- Use j/k in the sidebar to navigate between terminals
 -- Press r to rename a terminal
+```
+
+### Sidebar Toggle
+
+```lua
+require('acterm').setup({
+  keys = {
+    toggle_sidebar = '<leader>tp',  -- Quickly hide/show sidebar
+  },
+})
+
+-- Press <leader>tt to toggle the UI
+-- Press <leader>tp to hide sidebar for more space
+-- Press <leader>tp again to show sidebar
+-- Use <leader>tj/k to cycle terminals (sidebar updates but stays unfocused)
 ```
 
 ### Custom Commands

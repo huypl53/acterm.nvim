@@ -56,6 +56,63 @@ local function calculate_positions()
   }
 end
 
+function M.resize_windows()
+  if not state.is_ui_open() then
+    return
+  end
+
+  local sidebar_win, main_win, container_win = state.get_windows()
+  local cfg = config.get()
+  local positions = calculate_positions()
+  local sidebar_visible = state.is_sidebar_visible()
+
+  -- Update container window
+  if container_win and vim.api.nvim_win_is_valid(container_win) then
+    vim.api.nvim_win_set_config(container_win, {
+      relative = "editor",
+      width = positions.container.width,
+      height = positions.container.height,
+      row = positions.container.row,
+      col = positions.container.col,
+    })
+  end
+
+  -- Update sidebar window if visible
+  if sidebar_visible and sidebar_win and vim.api.nvim_win_is_valid(sidebar_win) then
+    vim.api.nvim_win_set_config(sidebar_win, {
+      relative = "editor",
+      width = positions.sidebar.width,
+      height = positions.sidebar.height,
+      row = positions.sidebar.row,
+      col = positions.sidebar.col,
+    })
+  end
+
+  -- Update main window (expands if sidebar hidden)
+  if main_win and vim.api.nvim_win_is_valid(main_win) then
+    if sidebar_visible then
+      vim.api.nvim_win_set_config(main_win, {
+        relative = "editor",
+        width = positions.main.width,
+        height = positions.main.height,
+        row = positions.main.row,
+        col = positions.main.col,
+      })
+    else
+      -- Main expands into sidebar space
+      local expanded_width = positions.sidebar.width + cfg.gap + positions.main.width
+      vim.api.nvim_win_set_config(main_win, {
+        relative = "editor",
+        width = expanded_width,
+        height = positions.main.height,
+        row = positions.main.row,
+        col = positions.sidebar.col,
+      })
+    end
+  end
+end
+
+
 function M.open()
   if state.is_ui_open() then
     return
@@ -168,12 +225,30 @@ function M.open()
     render_sidebar(sidebar_win)
   end))
 
+  -- Set up VimResized handler for dynamic window resizing
+  local resize_group = vim.api.nvim_create_augroup("AcTermResize", { clear = true })
+  vim.api.nvim_create_autocmd("VimResized", {
+    group = resize_group,
+    callback = function()
+      if state.is_ui_open() then
+        M.resize_windows()
+      end
+    end,
+  })
+  state.set_resize_group(resize_group)
+
   -- Focus main window last (default)
   vim.api.nvim_set_current_win(main_win)
 end
 
 function M.close()
   local sidebar_win, main_win, container_win = state.get_windows()
+
+  -- Clean up resize autocommand
+  local resize_group = state.get_resize_group()
+  if resize_group then
+    vim.api.nvim_del_augroup_by_id(resize_group)
+  end
 
   if container_win and vim.api.nvim_win_is_valid(container_win) then
     vim.api.nvim_win_close(container_win, true)
@@ -209,9 +284,11 @@ function M.update()
     return
   end
 
-  local _, main_win = state.get_windows()
+  local sidebar_win, main_win = state.get_windows()
   local current_index = state.get_current_index()
   local terminals = state.get_terminals()
+
+  local was_sidebar_focused = _sidebar_focused  -- Remember focus state
 
   -- Check if main_win is still valid before trying to set its buffer
   if main_win and vim.api.nvim_win_is_valid(main_win) then
@@ -221,9 +298,17 @@ function M.update()
     end
   end
 
-  local sidebar_win = state.get_windows()
+  -- Update sidebar visuals
   if sidebar_win and vim.api.nvim_win_is_valid(sidebar_win) then
     render_sidebar(sidebar_win)
+  end
+
+  -- Restore focus to where it was
+  if was_sidebar_focused and sidebar_win and vim.api.nvim_win_is_valid(sidebar_win) then
+    vim.api.nvim_set_current_win(sidebar_win)
+  elseif main_win and vim.api.nvim_win_is_valid(main_win) then
+    vim.api.nvim_set_current_win(main_win)
+    _sidebar_focused = false
   end
 end
 
@@ -255,6 +340,77 @@ function M.focus_sidebar()
     vim.api.nvim_set_current_win(sidebar_win)
     _sidebar_focused = true
     render_sidebar(sidebar_win)
+  end
+end
+
+function M.toggle_sidebar()
+  if not state.is_ui_open() then
+    return
+  end
+
+  local sidebar_win, main_win, container_win = state.get_windows()
+  if not (main_win and container_win) then
+    return
+  end
+
+  local cfg = config.get()
+  local positions = calculate_positions()
+  local currently_visible = state.is_sidebar_visible()
+
+  if currently_visible then
+    -- Hide sidebar
+    if sidebar_win and vim.api.nvim_win_is_valid(sidebar_win) then
+      vim.api.nvim_win_close(sidebar_win, true)
+    end
+    state.set_sidebar_visible(false)
+    state.set_windows(nil, main_win, container_win)
+
+    -- Expand main window to fill the space
+    local expanded_width = positions.sidebar.width + cfg.gap + positions.main.width
+    vim.api.nvim_win_set_config(main_win, {
+      relative = "editor",
+      width = expanded_width,
+      col = positions.sidebar.col,
+      row = positions.main.row,
+    })
+  else
+    -- Show sidebar
+    local sidebar_buf = state.get_buffers()
+    if not sidebar_buf or not vim.api.nvim_buf_is_valid(sidebar_buf) then
+      return
+    end
+
+    sidebar_win = vim.api.nvim_open_win(sidebar_buf, false, {
+      relative = "editor",
+      width = positions.sidebar.width,
+      height = positions.sidebar.height,
+      row = positions.sidebar.row,
+      col = positions.sidebar.col,
+      style = "minimal",
+      border = "none",
+    })
+    vim.wo[sidebar_win].winblend = cfg.winblend
+    vim.wo[sidebar_win].cursorline = true
+    vim.wo[sidebar_win].winhl = "Normal:AcTermNormal,CursorLine:AcTermCursorLine"
+
+    state.set_windows(sidebar_win, main_win, container_win)
+    state.set_sidebar_visible(true)
+
+    -- Shrink main window back to original size
+    vim.api.nvim_win_set_config(main_win, {
+      relative = "editor",
+      width = positions.main.width,
+      col = positions.main.col,
+      row = positions.main.row,
+    })
+
+    render_sidebar(sidebar_win)
+  end
+
+  -- Keep focus on main window
+  if vim.api.nvim_win_is_valid(main_win) then
+    vim.api.nvim_set_current_win(main_win)
+    _sidebar_focused = false
   end
 end
 

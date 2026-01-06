@@ -33,6 +33,7 @@ local defaults = {
     next = "<leader>tj",
     prev = "<leader>tk",
     focus_sidebar = "<leader>ts",
+    toggle_sidebar = "<leader>tp",
     rename = "r",
   },
   exit_key = "q",

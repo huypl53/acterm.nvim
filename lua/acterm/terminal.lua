@@ -8,7 +8,10 @@ function M.create_terminal(cwd)
   local cfg = config.get()
 
   local buf = vim.api.nvim_create_buf(false, true)
-  vim.bo[buf].termwinscroll = cfg.scrollback
+  -- Set scrollback limit to reduce memory usage (Neovim 0.10+)
+  if vim.fn.exists('&scrollback') == 1 then
+    vim.bo[buf].scrollback = cfg.scrollback
+  end
 
   local job_id
   vim.api.nvim_buf_call(buf, function()
@@ -145,7 +148,10 @@ function M.create_custom_terminal(command, cwd)
   local cfg = config.get()
 
   local buf = vim.api.nvim_create_buf(false, true)
-  vim.bo[buf].termwinscroll = cfg.scrollback
+  -- Set scrollback limit to reduce memory usage (Neovim 0.10+)
+  if vim.fn.exists('&scrollback') == 1 then
+    vim.bo[buf].scrollback = cfg.scrollback
+  end
   local job_id
 
   vim.api.nvim_buf_call(buf, function()

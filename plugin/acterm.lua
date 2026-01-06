@@ -62,6 +62,10 @@ vim.api.nvim_create_user_command("AcTermFocusSidebar", function()
   lazy_load().focus_sidebar()
 end, { desc = "Focus the sidebar" })
 
+vim.api.nvim_create_user_command("AcTermToggleSidebar", function()
+  lazy_load().toggle_sidebar()
+end, { desc = "Toggle sidebar visibility" })
+
 vim.api.nvim_create_user_command("AcTermRename", function(opts)
   lazy_load().rename_terminal(opts.args)
 end, { nargs = 1, desc = "Rename current terminal" })
