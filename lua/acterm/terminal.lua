@@ -3,6 +3,45 @@ local state = require("acterm.state")
 local config = require("acterm.config")
 local activity = require("acterm.activity")
 
+local function apply_terminal_keymaps(buf)
+  local cfg = config.get()
+  if not cfg.keys then
+    return
+  end
+
+  local function map_cycle(lhs, direction)
+    if not lhs or lhs == "" then
+      return
+    end
+
+    local opts = { noremap = true, silent = true, buffer = buf }
+    vim.keymap.set("n", lhs, function()
+      M.cycle_terminal(direction)
+      local ok, ui = pcall(require, "acterm.ui")
+      if ok and ui.update then
+        ui.update()
+      end
+    end, opts)
+    vim.keymap.set("t", lhs, function()
+      local esc = vim.api.nvim_replace_termcodes("<C-\\><C-n>", true, false, true)
+      vim.api.nvim_feedkeys(esc, "n", false)
+      M.cycle_terminal(direction)
+      local ok, ui = pcall(require, "acterm.ui")
+      if ok and ui.update then
+        ui.update()
+      end
+      vim.schedule(function()
+        if vim.bo.buftype == "terminal" then
+          vim.cmd("startinsert")
+        end
+      end)
+    end, opts)
+  end
+
+  map_cycle(cfg.keys.next, "next")
+  map_cycle(cfg.keys.prev, "prev")
+end
+
 function M.create_terminal(cwd)
   cwd = cwd or vim.fn.getcwd()
   local cfg = config.get()
@@ -51,6 +90,7 @@ function M.create_terminal(cwd)
     })
     vim.bo.bufhidden = "hide"
   end)
+  apply_terminal_keymaps(buf)
 
   if cfg.activity and cfg.activity.enabled then
     activity.start(buf, function()
@@ -199,6 +239,7 @@ function M.create_custom_terminal(command, cwd)
     })
     vim.bo.bufhidden = "hide"
   end)
+  apply_terminal_keymaps(buf)
 
   if cfg.activity and cfg.activity.enabled then
     activity.start(buf, function()

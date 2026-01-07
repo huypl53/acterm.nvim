@@ -13,6 +13,20 @@ end
 function M._setup_keybinds()
   local cfg = config.get()
   local opts = { noremap = true, silent = true }
+  local term_opts = { noremap = true, silent = true }
+
+  local function map_terminal_mode(lhs, fn)
+    vim.keymap.set("t", lhs, function()
+      local esc = vim.api.nvim_replace_termcodes("<C-\\><C-n>", true, false, true)
+      vim.api.nvim_feedkeys(esc, "n", false)
+      fn()
+      vim.schedule(function()
+        if vim.bo.buftype == "terminal" then
+          vim.cmd("startinsert")
+        end
+      end)
+    end, term_opts)
+  end
 
   if cfg.keys.toggle then
     vim.keymap.set("n", cfg.keys.toggle, function()
@@ -30,12 +44,18 @@ function M._setup_keybinds()
     vim.keymap.set("n", cfg.keys.next, function()
       M.next_terminal()
     end, opts)
+    map_terminal_mode(cfg.keys.next, function()
+      M.next_terminal()
+    end)
   end
 
   if cfg.keys.prev then
     vim.keymap.set("n", cfg.keys.prev, function()
       M.prev_terminal()
     end, opts)
+    map_terminal_mode(cfg.keys.prev, function()
+      M.prev_terminal()
+    end)
   end
 
   if cfg.keys.focus_sidebar then
