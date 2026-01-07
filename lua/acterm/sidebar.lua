@@ -3,6 +3,8 @@ local state = require("acterm.state")
 local config = require("acterm.config")
 local terminal = require("acterm.terminal")
 
+local ns_id = vim.api.nvim_create_namespace("acterm")
+
 local function get_sidebar_content()
   local terminals = state.get_terminals()
   local current_index = state.get_current_index()
@@ -60,8 +62,7 @@ function M.render()
 
   vim.o.eventignore = eventignore
 
-  -- Create namespace and clear previous highlights
-  local ns_id = vim.api.nvim_create_namespace("acterm")
+  -- Clear previous highlights
   vim.api.nvim_buf_clear_namespace(sidebar_buf, ns_id, 0, -1)
 
   -- Set up syntax highlights for status icons

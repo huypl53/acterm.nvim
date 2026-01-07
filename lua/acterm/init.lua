@@ -133,4 +133,69 @@ function M.open_custom_command(name)
   end
 end
 
+function M.stress_open_close(cycles, delay_ms, terms_per_cycle, lines_per_term, close_terms)
+  cycles = tonumber(cycles) or 100
+  delay_ms = tonumber(delay_ms) or 50
+  local terms_per_cycle = tonumber(terms_per_cycle) or 3
+  local lines_per_term = tonumber(lines_per_term) or 200
+  local close_terms = close_terms == true or tostring(close_terms) == "1"
+
+  local function send_output(term, cycle, term_index)
+    if not term or not term.job_id then
+      return
+    end
+
+    if lines_per_term <= 0 then
+      return
+    end
+
+    local message = string.format("acterm stress cycle=%d term=%d", cycle, term_index)
+    local escaped = message:gsub("'", "'\\''")
+    local cmd = string.format("for i in $(seq 1 %d); do echo '%s'; done\n", lines_per_term, escaped)
+    pcall(vim.api.nvim_chan_send, term.job_id, cmd)
+  end
+
+  local cycle = 0
+  local phase = 0
+  local timer = vim.uv.new_timer()
+  timer:start(0, delay_ms, function()
+    vim.schedule(function()
+      if phase == 0 then
+        cycle = cycle + 1
+        M.open()
+
+        local created = {}
+        for i = 1, terms_per_cycle do
+          local term = terminal.create_terminal()
+          state.add_terminal(term)
+          terminal.focus_terminal(state.get_terminal_count())
+          created[#created + 1] = term
+        end
+        ui.update()
+
+        for i, term in ipairs(created) do
+          send_output(term, cycle, i)
+        end
+
+        if close_terms then
+          for _, term in ipairs(created) do
+            if vim.api.nvim_buf_is_valid(term.buf) then
+              vim.api.nvim_buf_delete(term.buf, { force = true })
+            end
+          end
+        end
+
+        phase = 1
+      else
+        M.close()
+        phase = 0
+        if cycle >= cycles then
+          timer:stop()
+          timer:close()
+        end
+      end
+    end)
+  end)
+end
+
 return M

@@ -22,6 +22,7 @@ local defaults = {
     debounce_ms = 100,  -- Wait for output to pause before refreshing sidebar
   },
   scrollback = 1000,  -- Maximum lines of terminal history to keep (reduces RAM usage)
+  cleanup_on_exit = true,  -- Wipe terminal buffers when jobs exit to free memory
   status_icons = {
     running = "",
     idle = "",

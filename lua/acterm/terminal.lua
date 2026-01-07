@@ -39,6 +39,14 @@ function M.create_terminal(cwd)
             ui.update()
           end
         end
+
+        if cfg.cleanup_on_exit then
+          vim.schedule(function()
+            if vim.api.nvim_buf_is_valid(buf) then
+              vim.api.nvim_buf_delete(buf, { force = true })
+            end
+          end)
+        end
       end,
     })
     vim.bo.bufhidden = "hide"
@@ -178,6 +186,14 @@ function M.create_custom_terminal(command, cwd)
           if ok and ui.update then
             ui.update()
           end
+        end
+
+        if cfg.cleanup_on_exit then
+          vim.schedule(function()
+            if vim.api.nvim_buf_is_valid(buf) then
+              vim.api.nvim_buf_delete(buf, { force = true })
+            end
+          end)
         end
       end,
     })

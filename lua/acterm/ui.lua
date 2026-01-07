@@ -123,6 +123,8 @@ function M.open()
 
   -- Create container window with border (no content, just for border)
   local container_buf = vim.api.nvim_create_buf(false, true)
+  vim.bo[container_buf].buftype = "nofile"
+  vim.bo[container_buf].bufhidden = "wipe"
   local container_win = vim.api.nvim_open_win(container_buf, true, {
     relative = "editor",
     width = positions.container.width,
@@ -169,6 +171,8 @@ function M.open()
     main_buf = state.get_terminal(state.get_current_index()).buf
   else
     main_buf = vim.api.nvim_create_buf(false, true)
+    vim.bo[main_buf].buftype = "nofile"
+    vim.bo[main_buf].bufhidden = "wipe"
   end
 
   -- Create main terminal window (no border, inside container)

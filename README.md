@@ -87,6 +87,8 @@ require('acterm').setup({
     idle_ms = 1000,       -- Idle threshold for status (ms)
     debounce_ms = 100,    -- Wait for output to pause before refreshing (reduces overhead)
   },
+  scrollback = 1000,      -- Maximum lines of terminal history to keep
+  cleanup_on_exit = true, -- Wipe terminal buffers when jobs exit to free memory
   status_icons = {        -- Status indicators for terminals
     running = '',        -- Icon for running terminals
     idle = '',           -- Icon for idle terminals

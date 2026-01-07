@@ -3,6 +3,13 @@ local M = {}
 local state = {}
 local debounce_timers = {}
 
+local function close_timer(timer)
+  if timer and not timer:is_closing() then
+    timer:stop()
+    timer:close()
+  end
+end
+
 local function now_ms()
   return vim.uv.now()
 end
@@ -10,7 +17,7 @@ end
 -- Clear debounce timer for a buffer
 local function clear_timer(buf)
   if debounce_timers[buf] then
-    debounce_timers[buf]:close()
+    close_timer(debounce_timers[buf])
     debounce_timers[buf] = nil
   end
 end
@@ -50,6 +57,7 @@ function M.start(buf, on_change, debounce_ms)
           end
           if debounce_timers[buf] == timer then
             debounce_timers[buf] = nil
+            close_timer(timer)
           end
         end)
       end)
